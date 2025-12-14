@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en" data-theme="forest">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planetary Healing Ledger — Quest & Ritual Donor</title>
+  <meta name="description" content="Donate non-monetarily via daily acts of planetary care. Log quests, earn streaks, and sign entries locally to deter spoofing." />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#0b3d2e" />
+  <!-- Manifest via Blob (keeps single-file portability) -->
+  <link id="manifest-link" rel="manifest" href="data:application/manifest+json,{}">
+  <style>
+    /* ---------- CSS VARIABLES ---------- */
+    :root {
+      --bg: #061c17;
+      --bg-alt: #0d2a21;
+      --card: #11372c;
+      --ink: #e5fff4;
+      --muted: #b9e2d1;
+      --accent: #79f2c0;
+      --accent-2: #b7ff8a;
+      --danger: #ff6b6b;
+      --ok: #86efac;
+      --warn: #fde047;
+      --ring: #3dd6a7;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+      --gap: 14px;
+      --focus: 2px dashed var(--accent);
+      --font: ui-sans-serif, system-ui, Segoe UI, Roboto, Inter, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --size-hero: clamp(1.8rem, 1.1rem + 3vw, 3rem);
+      --size-h1: clamp(1.4rem, 1rem + 2vw, 2.2rem);
+      --size-h2: clamp(1.1rem, .9rem + 1.5vw, 1.6rem);
+      --size-body: clamp(.98rem, .9rem + .25vw, 1.05rem);
+      --size-small: .9rem;
+      --ring-offset: 2px;
+    }
+    [data-theme="forest"] { color-scheme: dark; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: var(--font); background: linear-gradient(135deg, var(--bg), var(--bg-alt));
+      color: var(--ink); accent-color: var(--accent);
+    }
+    /* ---------- LAYOUT ---------- */
+    header {
+      position: sticky; top: 0; z-index: 20; backdrop-filter: blur(8px);
+      background: color-mix(in oklab, var(--bg-alt) 85%, transparent);
+      border-bottom: 1px solid color-mix(in oklab, var(--accent) 20%, transparent);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 18px; }
+    .hero { padding-block: 18px 8px; display: grid; gap: 8px; }
+    .hero h1 { font-size: var(--size-hero); margin: 0; line-height: 1.1; letter-spacing: .3px; }
+    .tagline { color: var(--muted); font-size: var(--size-body); }
+    .bar { display: grid; gap: 10px; grid-template-columns: 1fr auto; align-items: center; }
+    .id-pill {
+      font-family: var(--mono); font-size: .9rem; padding: 8px 12px; border-radius: 999px;
+      background: var(--card); border: 1px solid color-mix(in oklab, var(--ring) 35%, transparent);
+    }
+    main { container-type: inline-size; container-name: main; }
+    .grid {
+      display: grid; gap: 16px; padding: 18px; grid-template-columns: 1fr;
+    }
+    @container main (min-width: 860px) {
+      .grid { grid-template-columns: 1.1fr .9fr; }
+    }
+
+    /* ---------- CARDS & BUTTONS ---------- */
+    .card {
+      background: color-mix(in oklab, var(--card) 90%, transparent);
+      border: 1px solid color-mix(in oklab, var(--ring) 25%, transparent);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .card h2 { margin-top: 0; font-size: var(--size-h1); }
+    .sub { color: var(--muted); font-size: var(--size-small); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); }
+    .stack { display: grid; gap: var(--gap); }
+    label { font-weight: 600; font-size: .95rem; }
+    input[type="text"], input[type="date"], input[type="time"], input[type="number"], textarea, select {
+      width: 100%; background: #0f3026; color: var(--ink); border: 1px solid #174739;
+      padding: 10px 12px; border-radius: 12px; font-size: var(--size-body);
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    button, .btn {
+      appearance: none; border: 1px solid color-mix(in oklab, var(--ring) 45%, transparent);
+      background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 20%, #0c2b22), #0c2b22);
+      color: var(--ink); padding: 10px 14px; border-radius: 12px; font-weight: 700; cursor: pointer;
+      transition: transform .06s ease, box-shadow .06s ease, background .2s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,.3);
+    }
+    button:hover { transform: translateY(-1px); }
+    button:focus-visible { outline: var(--focus); outline-offset: var(--ring-offset); }
+    .btn-ghost { background: transparent; border-color: #225e4b; }
+    .btn-danger { border-color: color-mix(in oklab, var(--danger) 60%, transparent); background: #3d0e0e; }
+    .btn-ok { background: #0e3d2a; border-color: #2aa876; }
+
+    /* ---------- QUEST LIST ---------- */
+    .quest { border: 1px dashed #1d5a47; border-radius: 14px; padding: 12px; display: grid; gap: 6px; }
+    .quest header { display: flex; justify-content: space-between; align-items: center; position: relative; inset: unset; border: none; background: transparent; backdrop-filter: none; }
+    .q-title { font-weight: 800; }
+    .q-meta { font-family: var(--mono); font-size: .85rem; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+    .q-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge { padding: 2px 8px; border-radius: 999px; font-size: .82rem; background: #144636; border: 1px solid #1f6e57; }
+    .streak { background: #213a14; border-color: #2f5a1b; }
+    .signed { background: #152e46; border-color: #20507b; }
+
+    /* ---------- A11Y & MOTION ---------- */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+    }
+
+    /* ---------- TOAST ---------- */
+    .toast {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 9999;
+      background: #0c2a22; color: var(--ink); border: 1px solid #1e6a54; padding: 10px 14px; border-radius: 12px; box-shadow: var(--shadow);
+      max-width: min(90vw, 560px);
+    }
+
+    /* ---------- HELP / KEYBOARD ---------- */
+    kbd { background: #0e2d23; border: 1px solid #1f6e57; border-bottom-width: 3px; border-radius: 6px; padding: 2px 6px; font-family: var(--mono); font-size: .86rem; }
+    details.help { border: 1px dashed #1d5a47; border-radius: 14px; padding: 10px 12px; }
+    details.help summary { cursor: pointer; font-weight: 700; }
+
+    /* ---------- PRINT ---------- */
+    @media print {
+      header { position: static; }
+      .btn, .q-actions, .toast, .help { display: none !important; }
+      body { background: #fff; color: #000; }
+      .card { border: 1px solid #000; background: #fff; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero" role="banner">
+      <h1>Planetary Healing Ledger</h1>
+      <p class="tagline">Donate without money. Turn your daily acts into quests and rituals. Your entries are <strong>signed locally</strong> to deter spoofing.</p>
+      <div class="bar" role="navigation" aria-label="Primary">
+        <div class="id-pill" id="idPill" aria-live="polite">Identity: generating…</div>
+        <div class="q-actions" role="group" aria-label="Quick actions">
+          <button id="newQuestBtn" title="New quest (N)" aria-keyshortcuts="N">➕ New Quest</button>
+          <button id="ritualBtn" class="btn-ghost" title="Add Ritual" aria-keyshortcuts="R">🜁 Ritual</button>
+          <button id="exportBtn" class="btn-ghost" title="Export ledger (S)" aria-keyshortcuts="S">⬇️ Export</button>
+          <button id="importBtn" class="btn-ghost" title="Import ledger" aria-keyshortcuts="I">⬆️ Import</button>
+          <button id="lockBtn" class="btn-ghost" title="Lock with passphrase (L)" aria-keyshortcuts="L">🔐 Lock</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap grid" id="appRoot">
+    <!-- LEFT: forms -->
+    <section class="card stack" aria-labelledby="formTitle">
+      <h2 id="formTitle">Log an Act</h2>
+      <p class="sub">Everything stays on your device unless you export. Entries are cryptographically signed with your device key.</p>
+      <form id="questForm" class="stack" autocomplete="off">
+        <div class="row">
+          <div class="stack">
+            <label for="title">Title</label>
+            <input id="title" name="title" type="text" placeholder="e.g., Planted 3 Siberian apple seeds" required />
+          </div>
+          <div class="stack">
+            <label for="kind">Kind</label>
+            <select id="kind" name="kind">
+              <option>Daily Quest</option>
+              <option>Ritual</option>
+              <option>Stewardship</option>
+              <option>Mutual Aid</option>
+              <option>Repair & Reuse</option>
+              <option>Wildcare</option>
+              <option>Civic Watch</option>
+              <option>Learning</option>
+            </select>
+          </div>
+        </div>
+        <div class="row-3">
+          <div class="stack">
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" required />
+          </div>
+          <div class="stack">
+            <label for="time">Time</label>
+            <input id="time" name="time" type="time" />
+          </div>
+          <div class="stack">
+            <label for="xp">XP</label>
+            <input id="xp" name="xp" type="number" inputmode="numeric" min="0" step="1" value="5" />
+          </div>
+        </div>
+        <div class="stack">
+          <label for="notes">Notes / Evidence</label>
+          <textarea id="notes" name="notes" placeholder="Where, how, who benefited? Links are okay."></textarea>
+        </div>
+        <div class="row">
+          <div class="stack">
+            <label for="tags">Tags (comma-sep)</label>
+            <input id="tags" name="tags" type="text" placeholder="trees, water, birds" />
+          </div>
+          <div class="stack">
+            <label for="ritualize">Make it a repeating ritual?</label>
+            <select id="ritualize" name="ritualize">
+              <option value="">No</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <button type="submit" class="btn-ok">Log & Sign</button>
+          <button type="button" id="clearForm" class="btn-ghost">Clear</button>
+        </div>
+      </form>
+
+      <details class="help">
+        <summary>How identity & anti-spoofing works</summary>
+        <p>Your device generates an <strong>elliptic-curve keypair (P-256)</strong> and stores it locally. Each log entry is <strong>signed</strong> with that private key. Your public key’s fingerprint + device traits create a <strong>human-readable mnemonic</strong> shown above. Exports include signatures so others can verify authenticity.</p>
+        <p>Optional: set a passphrase to encrypt your private key at rest. No server, no tracking, no cookies beyond your data.</p>
+      </details>
+    </section>
+
+    <!-- RIGHT: list & stats -->
+    <section class="card stack" aria-labelledby="listTitle">
+      <h2 id="listTitle">Your Ledger</h2>
+      <div class="row">
+        <input id="search" type="text" placeholder="Search ( / )" aria-label="Search entries" />
+        <select id="filterKind" aria-label="Filter by kind">
+          <option value="">All kinds</option>
+          <option>Daily Quest</option>
+          <option>Ritual</option>
+          <option>Stewardship</option>
+          <option>Mutual Aid</option>
+          <option>Repair & Reuse</option>
+          <option>Wildcare</option>
+          <option>Civic Watch</option>
+          <option>Learning</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="badge" id="xpTotal" aria-live="polite">XP: 0</div>
+        <div class="badge streak" id="streakBadge" aria-live="polite" title="Consecutive days with at least one act">Streak: 0</div>
+        <div class="badge signed" id="signedOK" aria-live="polite">Signed</div>
+      </div>
+      <div id="list" class="stack" role="list" aria-label="Entries"></div>
+      <div class="row">
+        <button id="verifyAll" class="btn-ghost">Verify Signatures</button>
+        <button id="purgeBtn" class="btn-danger">Erase All (local)</button>
+      </div>
+      <details class="help">
+        <summary>Keyboard & tips</summary>
+        <p>
+          <kbd>N</kbd> new quest, <kbd>/</kbd> search, <kbd>S</kbd> export, <kbd>I</kbd> import, <kbd>L</kbd> lock/unlock key.
+          Tab order is logical; buttons show focus rings. Print view produces a clean proof sheet.
+        </p>
+      </details>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script>
+  /*! Planetary Healing Ledger — Single-file app
+      Identity: ECDSA (P-256) via WebCrypto
+      Storage: IndexedDB + localStorage
+      Signatures: Sign each entry payload; verify on demand & during import
+      Device mnemonic: salted hash of device traits + public key → wordlist
+      SW: registered from inlined Blob; cache-forever (versioned)
+      Accessibility: labels, roles, keyboard shortcuts, reduced motion
+  */
+
+  // ---------- Helpers ----------
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  function toast(msg, ms=2400) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.hidden = false;
+    window.clearTimeout(toast._t);
+    toast._t = setTimeout(()=> el.hidden = true, ms);
+  }
+
+  // ---------- Wordlist (short, readable) ----------
+  const WORDS = [
+    "seed","river","mycel","grove","ember","ridge","moss","quill","thrive","pulse","canopy","stone","echo","fern","solar","lumen",
+    "bloom","drift","weave","root","north","kite","spark","rain","pine","lichen","dawn","delta","pond","finch","aegis","harbor"
+  ];
+
+  // ---------- IndexedDB mini wrapper ----------
+  const DB_NAME = 'healing-ledger-v1';
+  const STORE_ENTRIES = 'entries';
+  const STORE_KEYS = 'keys';
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_ENTRIES)) db.createObjectStore(STORE_ENTRIES, { keyPath: 'id' });
+        if (!db.objectStoreNames.contains(STORE_KEYS)) db.createObjectStore(STORE_KEYS, { keyPath: 'name' });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function idbGet(store, key) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly').objectStore(store).get(key);
+      tx.onsuccess = () => resolve(tx.result);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function idbPut(store, val) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite').objectStore(store).put(val);
+      tx.onsuccess = () => resolve(val);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function idbDel(store, key) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite').objectStore(store).delete(key);
+      tx.onsuccess = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function idbAll(store) {
+    const db = await idbOpen();
+    return new Promise((resolve, reject) => {
+      const out = [];
+      const req = db.transaction(store, 'readonly').objectStore(store).openCursor();
+      req.onsuccess = (e) => {
+        const cur = e.target.result;
+        if (cur) { out.push(cur.value); cur.continue(); }
+        else resolve(out);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  // ---------- Crypto & Identity ----------
+  const KEY_NAME = 'device-key';
+  let cryptoKeyPair = null;
+  let publicKeyRaw = null; // SPKI ArrayBuffer
+  let deviceSalt = null;   // Random bytes stored locally
+  let locked = false;      // Whether private key is encrypted
+
+  async function sha256(buf) { return await crypto.subtle.digest('SHA-256', buf); }
+  function hex(uint8) { return [...uint8].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
+  async function exportSPKI(pubKey) {
+    return crypto.subtle.exportKey('spki', pubKey);
+  }
+  async function exportPKCS8(privKey) {
+    return crypto.subtle.exportKey('pkcs8', privKey);
+  }
+
+  async function deriveMnemonic() {
+    const traits = [
+      navigator.userAgent, navigator.language, navigator.platform,
+      Intl.DateTimeFormat().resolvedOptions().timeZone || 'tz',
+      String(navigator.maxTouchPoints || 0),
+    ].join('|');
+
+    if (!deviceSalt) {
+      // 16 random bytes salt
+      deviceSalt = crypto.getRandomValues(new Uint8Array(16));
+      localStorage.setItem('deviceSalt', btoa(String.fromCharCode(...deviceSalt)));
+    }
+    const salt = deviceSalt;
+    const pub = new Uint8Array(publicKeyRaw);
+    const data = encoder.encode(traits);
+    // hash(salt || pubkey || traits)
+    const mix = new Uint8Array(salt.length + pub.length + data.length);
+    mix.set(salt,0); mix.set(pub, salt.length); mix.set(new Uint8Array(data), salt.length + pub.length);
+    const h = new Uint8Array(await sha256(mix));
+    // Map first 6 nibbles to words
+    const parts = [];
+    for (let i=0;i<6;i++) {
+      const byte = h[i];
+      parts.push(WORDS[byte % WORDS.length]);
+    }
+    // Fingerprint tail for collision-resistant short code
+    const tail = hex(h.slice(6,10)).slice(0,6);
+    return parts.join('-') + '-' + tail;
+  }
+
+  async function signPayload(obj) {
+    const data = encoder.encode(JSON.stringify(obj));
+    const sig = await crypto.subtle.sign({name:'ECDSA', hash:'SHA-256'}, cryptoKeyPair.privateKey, data);
+    return btoa(String.fromCharCode(...new Uint8Array(sig)));
+  }
+
+  async function verifyPayload(obj, sigB64, pubKeyRawBytes) {
+    const data = encoder.encode(JSON.stringify(obj));
+    const sig = Uint8Array.from(atob(sigB64), c=>c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('spki', pubKeyRawBytes, {name:'ECDSA', namedCurve:'P-256'}, true, ['verify']);
+    return await crypto.subtle.verify({name:'ECDSA', hash:'SHA-256'}, key, sig, data);
+  }
+
+  async function loadOrCreateKey() {
+    // Try load from DB
+    const krec = await idbGet(STORE_KEYS, KEY_NAME);
+    let needsSave = false;
+
+    if (!krec) {
+      cryptoKeyPair = await crypto.subtle.generateKey({name:'ECDSA', namedCurve:'P-256'}, true, ['sign','verify']);
+      needsSave = true;
+    } else {
+      // key may be raw or encrypted
+      try {
+        const pub = await crypto.subtle.importKey('spki', krec.spki, {name:'ECDSA', namedCurve:'P-256'}, true, ['verify']);
+        publicKeyRaw = krec.spki;
+        if (krec.enc) {
+          locked = true;
+          cryptoKeyPair = { publicKey: pub, privateKey: null };
+        } else {
+          const priv = await crypto.subtle.importKey('pkcs8', krec.pkcs8, {name:'ECDSA', namedCurve:'P-256'}, true, ['sign']);
+          cryptoKeyPair = { publicKey: pub, privateKey: priv };
+        }
+      } catch (e) {
+        console.warn('Key import failed, regenerating', e);
+        cryptoKeyPair = await crypto.subtle.generateKey({name:'ECDSA', namedCurve:'P-256'}, true, ['sign','verify']);
+        needsSave = true;
+      }
+    }
+
+    if (!publicKeyRaw) publicKeyRaw = await exportSPKI(cryptoKeyPair.publicKey);
+
+    if (needsSave) {
+      await idbPut(STORE_KEYS, { name: KEY_NAME, spki: publicKeyRaw, pkcs8: await exportPKCS8(cryptoKeyPair.privateKey), enc: false });
+    }
+
+    const saltB64 = localStorage.getItem('deviceSalt');
+    if (saltB64) deviceSalt = Uint8Array.from(atob(saltB64), c=>c.charCodeAt(0));
+
+    const mnemonic = await deriveMnemonic();
+    $('#idPill').textContent = `Identity: ${mnemonic}`;
+  }
+
+  async function lockKey(passphrase) {
+    if (!cryptoKeyPair?.privateKey) return false;
+    // Derive AES-GCM key from passphrase
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const kdfKey = await crypto.subtle.importKey('raw', encoder.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+    const aesKey = await crypto.subtle.deriveKey({name:'PBKDF2', salt, iterations: 150000, hash:'SHA-256'}, kdfKey, {name:'AES-GCM', length: 256}, false, ['encrypt']);
+    const pkcs8 = await exportPKCS8(cryptoKeyPair.privateKey);
+    const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, aesKey, pkcs8);
+    await idbPut(STORE_KEYS, { name: KEY_NAME, spki: publicKeyRaw, enc: true, salt, iv, ct });
+    cryptoKeyPair.privateKey = null;
+    locked = true;
+    toast('Key locked. Keep your passphrase safe.');
+    return true;
+  }
+
+  async function unlockKey(passphrase) {
+    const rec = await idbGet(STORE_KEYS, KEY_NAME);
+    if (!rec?.enc) return false;
+    try {
+      const kdfKey = await crypto.subtle.importKey('raw', encoder.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+      const aesKey = await crypto.subtle.deriveKey({name:'PBKDF2', salt: rec.salt, iterations: 150000, hash:'SHA-256'}, kdfKey, {name:'AES-GCM', length: 256}, false, ['decrypt']);
+      const pkcs8 = await crypto.subtle.decrypt({name:'AES-GCM', iv: rec.iv}, aesKey, rec.ct);
+      const priv = await crypto.subtle.importKey('pkcs8', pkcs8, {name:'ECDSA', namedCurve:'P-256'}, true, ['sign']);
+      const pub = await crypto.subtle.importKey('spki', rec.spki, {name:'ECDSA', namedCurve:'P-256'}, true, ['verify']);
+      cryptoKeyPair = { publicKey: pub, privateKey: priv };
+      publicKeyRaw = rec.spki;
+      locked = false;
+      toast('Unlocked.');
+      return true;
+    } catch {
+      toast('Wrong passphrase.');
+      return false;
+    }
+  }
+
+  // ---------- Entries ----------
+  function todayISO() {
+    const d = new Date();
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), da = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${da}`;
+  }
+
+  function newId() {
+    const r = crypto.getRandomValues(new Uint8Array(8));
+    return 'q_' + hex(r);
+  }
+
+  async function computeStreak(entries) {
+    // Count consecutive days ending today with at least one entry
+    const days = new Set(entries.map(e=> e.date));
+    let streak = 0;
+    const d = new Date();
+    for (;;) {
+      const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), da = String(d.getDate()).padStart(2,'0');
+      const iso = `${y}-${m}-${da}`;
+      if (days.has(iso)) { streak++; d.setDate(d.getDate()-1); }
+      else break;
+    }
+    return streak;
+  }
+
+  async function renderList() {
+    const list = $('#list');
+    const q = ($('#search').value || '').toLowerCase();
+    const kind = $('#filterKind').value;
+
+    let entries = await idbAll(STORE_ENTRIES);
+    entries.sort((a,b)=> (b.created - a.created)); // newest first
+
+    const filtered = entries.filter(e => {
+      if (kind && e.kind !== kind) return false;
+      const text = [e.title, e.kind, e.notes, (e.tags||[]).join(',')].join(' ').toLowerCase();
+      return text.includes(q);
+    });
+
+    list.innerHTML = '';
+    let xpTotal = 0;
+
+    for (const e of filtered) {
+      xpTotal += Number(e.xp||0);
+      const div = document.createElement('div');
+      div.className = 'quest';
+      div.setAttribute('role','listitem');
+      div.innerHTML = `
+        <header>
+          <div>
+            <div class="q-title">${e.title}</div>
+            <div class="q-meta">
+              <span class="badge">${e.kind}</span>
+              <span>${e.date}${e.time? ' '+e.time:''}</span>
+              <span class="badge">XP ${e.xp||0}</span>
+              ${e.ritual? `<span class="badge">⟳ ${e.ritual}</span>`:''}
+              ${e.sigOK? `<span class="badge signed" title="Locally verified">Signed✓</span>`:`<span class="badge" title="Not verified yet">Unsigned?</span>`}
+            </div>
+          </div>
+          <div class="q-actions">
+            <button class="btn-ghost" data-act="verify" data-id="${e.id}">Verify</button>
+            <button class="btn-ghost" data-act="clone" data-id="${e.id}">Clone</button>
+            <button class="btn-danger" data-act="del" data-id="${e.id}">Delete</button>
+          </div>
+        </header>
+        ${e.tags?.length ? `<div class="q-meta"># ${e.tags.join(', ')}</div>`:''}
+        ${e.notes ? `<div>${e.notes.replace(/</g,'&lt;')}</div>`:''}
+      `;
+      list.appendChild(div);
+    }
+
+    $('#xpTotal').textContent = `XP: ${xpTotal}`;
+    $('#streakBadge').textContent = `Streak: ${await computeStreak(entries)}`;
+    $('#signedOK').textContent = cryptoKeyPair?.privateKey ? 'Signing: Ready' : (locked ? 'Signing: Locked' : 'Signing: No key');
+  }
+
+  async function addEntry({title, kind, date, time, xp, notes, ritual, tags}) {
+    const payload = { title, kind, date, time, xp, notes, ritual, tags, created: Date.now() };
+    if (!cryptoKeyPair?.privateKey) {
+      toast('Cannot sign: key locked or missing.');
+    }
+    const sig = cryptoKeyPair?.privateKey ? await signPayload(payload) : null;
+    const entry = { id: newId(), ...payload, sig, pub: publicKeyRaw };
+    await idbPut(STORE_ENTRIES, entry);
+    toast('Logged.');
+    await renderList();
+  }
+
+  async function verifyEntry(id) {
+    const e = await idbGet(STORE_ENTRIES, id);
+    if (!e?.sig || !e?.pub) { toast('Missing signature.'); return; }
+    const ok = await verifyPayload({
+      title:e.title, kind:e.kind, date:e.date, time:e.time, xp:e.xp, notes:e.notes, ritual:e.ritual, tags:e.tags, created:e.created
+    }, e.sig, e.pub);
+    e.sigOK = !!ok;
+    await idbPut(STORE_ENTRIES, e);
+    await renderList();
+    toast(ok ? 'Signature valid.' : 'Signature INVALID.');
+  }
+
+  async function verifyAll() {
+    const entries = await idbAll(STORE_ENTRIES);
+    let good=0, bad=0;
+    for (const e of entries) {
+      if (e.sig && e.pub) {
+        const ok = await verifyPayload({
+          title:e.title, kind:e.kind, date:e.date, time:e.time, xp:e.xp, notes:e.notes, ritual:e.ritual, tags:e.tags, created:e.created
+        }, e.sig, e.pub);
+        e.sigOK = !!ok; await idbPut(STORE_ENTRIES, e);
+        ok?good++:bad++;
+      }
+    }
+    await renderList();
+    toast(`Verified: ${good} ok, ${bad} bad.`);
+  }
+
+  function serializeExport(entries) {
+    return {
+      _format: "healing-ledger/v1",
+      exportedAt: new Date().toISOString(),
+      publicKey: publicKeyRaw ? Array.from(new Uint8Array(publicKeyRaw)) : null,
+      identityMnemonic: $('#idPill').textContent.replace('Identity: ',''),
+      entries
+    };
+  }
+
+  async function doExport() {
+    const entries = await idbAll(STORE_ENTRIES);
+    const blob = new Blob([ JSON.stringify(serializeExport(entries), null, 2) ], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href:url, download:'planetary-healing-ledger.json' });
+    a.click(); URL.revokeObjectURL(url);
+    toast('Exported JSON.');
+  }
+
+  async function doImport() {
+    const inp = Object.assign(document.createElement('input'), { type:'file', accept:'application/json' });
+    inp.onchange = async () => {
+      const file = inp.files[0]; if (!file) return;
+      const text = await file.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch { toast('Invalid JSON.'); return; }
+
+      if (data?._format !== 'healing-ledger/v1') { toast('Unknown format.'); return; }
+      // Optional verification: if publicKey differs, we still import but mark sigOK=null
+      for (const e of data.entries || []) {
+        e.id = e.id || newId();
+        e.sigOK = null; // re-verify manually
+        await idbPut(STORE_ENTRIES, e);
+      }
+      toast(`Imported ${data.entries?.length||0} entries. Verify signatures as needed.`);
+      renderList();
+    };
+    inp.click();
+  }
+
+  // ---------- UI wiring ----------
+  function wireUI() {
+    // Defaults for date/time
+    $('#date').value = todayISO();
+
+    $('#questForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      await addEntry({
+        title: f.get('title'),
+        kind: f.get('kind'),
+        date: f.get('date'),
+        time: f.get('time'),
+        xp: Number(f.get('xp')||0),
+        notes: f.get('notes'),
+        ritual: f.get('ritualize') || '',
+        tags: String(f.get('tags')||'').split(',').map(s=>s.trim()).filter(Boolean)
+      });
+      e.target.reset();
+      $('#date').value = todayISO();
+    });
+
+    $('#clearForm').addEventListener('click', () => {
+      $('#questForm').reset();
+      $('#date').value = todayISO();
+    });
+
+    $('#list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-id');
+      const act = btn.getAttribute('data-act');
+      if (act === 'del') { await idbDel(STORE_ENTRIES, id); await renderList(); toast('Deleted.'); }
+      if (act === 'verify') { await verifyEntry(id); }
+      if (act === 'clone') {
+        const entry = await idbGet(STORE_ENTRIES, id);
+        if (!entry) return;
+        await addEntry({
+          title: entry.title,
+          kind: entry.kind,
+          date: todayISO(),
+          time: '',
+          xp: entry.xp,
+          notes: entry.notes,
+          ritual: entry.ritual,
+          tags: entry.tags
+        });
+      }
+    });
+
+    $('#verifyAll').addEventListener('click', verifyAll);
+    $('#exportBtn').addEventListener('click', doExport);
+    $('#importBtn').addEventListener('click', doImport);
+
+    $('#newQuestBtn').addEventListener('click', () => $('#title').focus());
+    $('#ritualBtn').addEventListener('click', () => { $('#ritualize').value='daily'; $('#title').focus(); });
+
+    $('#search').addEventListener('input', renderList);
+    $('#filterKind').addEventListener('change', renderList);
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'N' || e.key === 'n') { e.preventDefault(); $('#title').focus(); }
+      if (e.key === '/') { e.preventDefault(); $('#search').focus(); }
+      if (e.key === 'S' || e.key === 's') { e.preventDefault(); doExport(); }
+      if (e.key === 'I' || e.key === 'i') { e.preventDefault(); doImport(); }
+      if (e.key === 'L' || e.key === 'l') { e.preventDefault(); $('#lockBtn').click(); }
+    });
+
+    $('#lockBtn').addEventListener('click', async () => {
+      if (locked) {
+        const pass = prompt('Enter passphrase to unlock:');
+        if (pass) await unlockKey(pass);
+      } else if (cryptoKeyPair?.privateKey) {
+        const pass = prompt('Set a strong passphrase to encrypt your key:');
+        if (pass && pass.length >= 8) await lockKey(pass);
+        else toast('Passphrase too short.');
+      } else {
+        toast('Key is already locked or missing.');
+      }
+      renderList();
+    });
+  }
+
+  // ---------- PWA: Manifest + Service Worker (all inline) ----------
+  (function setupManifest() {
+    const manifest = {
+      name: "Planetary Healing Ledger",
+      short_name: "Healing Ledger",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#0b3d2e",
+      theme_color: "#0b3d2e",
+      icons: []
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
+    const url = URL.createObjectURL(blob);
+    document.getElementById('manifest-link').href = url;
+  })();
+
+  (function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    const swCode = `
+      const VERSION = 'v1.0.0';
+      const ASSETS = ['.'];
+      self.addEventListener('install', e => {
+        e.waitUntil(caches.open(VERSION).then(c => c.addAll(ASSETS)));
+        self.skipWaiting();
+      });
+      self.addEventListener('activate', e => {
+        e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==VERSION).map(k=>caches.delete(k)))));
+        self.clients.claim();
+      });
+      self.addEventListener('fetch', e => {
+        const req = e.request;
+        e.respondWith(caches.match(req).then(cached => cached || fetch(req).then(res => {
+          // cache GET navigations for full offline
+          if (req.method === 'GET' && (req.mode === 'navigate' || req.destination === 'document')) {
+            const resClone = res.clone();
+            caches.open(VERSION).then(c => c.put(req, resClone));
+          }
+          return res;
+        }).catch(()=> cached || new Response('<h1>Offline</h1>', {headers:{'Content-Type':'text/html'}}))));
+      });
+    `;
+    const blob = new Blob([swCode], {type: 'text/javascript'});
+    const url = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url);
+  })();
+
+  // ---------- Init ----------
+  (async function init() {
+    wireUI();
+    await loadOrCreateKey();
+    await renderList();
+  })();
+  </script>
+</body>
+</html>
